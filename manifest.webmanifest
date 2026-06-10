@@ -1,0 +1,16 @@
+{
+  "name": "Treino Tiago",
+  "short_name": "Treino",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101417",
+  "theme_color": "#101417",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
