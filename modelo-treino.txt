@@ -1,0 +1,34 @@
+# Modelo de ficha de treino
+# Preencha este modelo para criar seu próximo ciclo no Treino Tiago. Importe o arquivo em Fichas e confira a prévia antes de ativar. Seu histórico anterior será preservado.
+# Mantenha os nomes dos campos e altere apenas o conteúdo depois dos dois-pontos. Duplique blocos de Exercício ou Treino para ampliar sua ficha. Apague os exemplos que não quiser usar.
+# Tipo: forca = repetições e kg; tempo = segundos; cardio = minutos e km. Séries: número de 1 a 30 ou intervalo como 3-4. Meta e Descanso são orientações em texto.
+# Um treino sem exercícios registra descanso. Mantenha o mesmo nome de um exercício para comparar resultados entre ciclos. Estas linhas com # são comentários e não entram na ficha.
+# Salve como DOCX ou TXT. Não use PDF, imagens ou tabelas. Os exemplos abaixo mostram o preenchimento e não são uma prescrição de treino.
+Ciclo: Meu próximo ciclo
+Treino: A — Primeiro treino
+Foco: Preencha o foco do treino
+Objetivo: Preencha seu objetivo
+Exercício: Agachamento livre com barra
+Tipo: forca
+Séries: 3
+Meta: 8 a 12 repetições
+Descanso: 90 seg
+Obs: Substitua pelas orientações da sua ficha.
+Exercício: Prancha
+Tipo: tempo
+Séries: 2
+Meta: 30 segundos
+Descanso: 60 seg
+Obs: Substitua pelas orientações da sua ficha.
+Treino: B — Cardio
+Foco: Cardio
+Objetivo: Preencha seu objetivo
+Exercício: Caminhada
+Tipo: cardio
+Séries: 1
+Meta: 20 minutos
+Descanso: livre
+Obs: Distância é opcional no registro.
+Treino: Descanso
+Foco: Recuperação
+Objetivo: Dia sem exercícios programados

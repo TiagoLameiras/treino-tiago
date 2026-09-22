@@ -1,110 +1,78 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#101417">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101715" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta
+      name="description"
+      content="Seu treino, no seu ritmo. Fichas, séries e evolução salvas no seu aparelho."
+    />
     <title>Treino Tiago</title>
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/fflate.js" defer></script>
+    <script src="default-plan.js" defer></script>
+    <script src="core.js" defer></script>
+    <script src="app.js" defer></script>
   </head>
   <body>
-    <main class="app-shell">
+    <a class="skip-link" href="#main">Ir para o conteúdo</a>
+    <div class="app-shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Home Gym</p>
-          <h1>Treino Tiago</h1>
-        </div>
-        <button class="icon-button" id="installBtn" type="button" title="Instalar app">+</button>
+        <a href="#hoje" class="brand" aria-label="Treino Tiago, início"
+          ><span class="brand-mark" aria-hidden="true">t.</span
+          ><span>treino<span class="brand-light"> tiago</span></span></a
+        ><button
+          class="icon-button"
+          data-action="settings"
+          aria-label="Ajustes e backup"
+          title="Ajustes e backup"
+        >
+          ⚙
+        </button>
       </header>
-
-      <section class="today-panel">
-        <div>
-          <span class="date-label" id="todayLabel"></span>
-          <h2 id="selectedWorkoutTitle">Treino</h2>
-          <p id="selectedWorkoutGoal"></p>
-        </div>
-        <select id="workoutSelect" aria-label="Escolher treino"></select>
-      </section>
-
-      <nav class="tabbar" aria-label="Navegação principal">
-        <button class="tab active" data-tab="treino" type="button">Treino</button>
-        <button class="tab" data-tab="historico" type="button">Histórico</button>
-        <button class="tab" data-tab="editar" type="button">Editar</button>
+      <main id="main" tabindex="-1"></main>
+      <nav class="bottom-nav" aria-label="Navegação principal">
+        <button data-tab="hoje" aria-current="page">
+          <span aria-hidden="true">◫</span>Hoje</button
+        ><button data-tab="historico">
+          <span aria-hidden="true">▦</span>Histórico</button
+        ><button data-tab="evolucao">
+          <span aria-hidden="true">↗</span>Evolução</button
+        ><button data-tab="fichas">
+          <span aria-hidden="true">▤</span>Fichas
+        </button>
       </nav>
-
-      <section class="view active" id="view-treino">
-        <div class="session-actions">
-          <button class="primary" id="saveSessionBtn" type="button">Salvar treino de hoje</button>
-          <button class="secondary" id="clearSessionBtn" type="button">Limpar tela</button>
-        </div>
-        <div class="exercise-list" id="exerciseList"></div>
-      </section>
-
-      <section class="view" id="view-historico">
-        <div class="report-controls">
-          <label>
-            Exercício
-            <select id="reportExerciseSelect"></select>
-          </label>
-          <label>
-            Período
-            <select id="reportRangeSelect">
-              <option value="30">30 dias</option>
-              <option value="90" selected>90 dias</option>
-              <option value="365">1 ano</option>
-              <option value="all">Tudo</option>
-            </select>
-          </label>
-        </div>
-        <div class="metrics-grid" id="metricsGrid"></div>
-        <div class="chart-wrap">
-          <canvas id="progressChart" width="720" height="360" aria-label="Gráfico de progressão"></canvas>
-        </div>
-        <div class="history-list" id="historyList"></div>
-      </section>
-
-      <section class="view" id="view-editar">
-        <div class="editor-head">
-          <div>
-            <h2>Editar ficha</h2>
-            <p>Altere exercícios, séries, repetições e observações. O histórico antigo continua salvo.</p>
-          </div>
-          <button class="secondary" id="resetPlanBtn" type="button">Restaurar PDF</button>
-        </div>
-        <section class="backup-panel">
-          <div>
-            <h3>Backup</h3>
-            <p>Guarde uma cópia do histórico no iCloud Drive ou restaure quando precisar.</p>
-          </div>
-          <div class="backup-actions">
-            <button class="secondary" id="exportBackupBtn" type="button">Exportar</button>
-            <label class="secondary import-label">
-              Importar
-              <input id="importBackupInput" accept="application/json,.json" type="file">
-            </label>
-          </div>
-        </section>
-        <div class="editor" id="planEditor"></div>
-      </section>
-    </main>
-
-    <template id="setRowTemplate">
-      <div class="set-row">
-        <span class="set-index"></span>
-        <label>
-          Reps
-          <input inputmode="numeric" min="0" name="reps" type="number">
-        </label>
-        <label>
-          Kg
-          <input inputmode="decimal" min="0" name="weight" step="0.5" type="number">
-        </label>
-        <button class="ghost remove-set" type="button">Remover</button>
-      </div>
-    </template>
-
-    <script src="app.js"></script>
+    </div>
+    <aside id="timer" class="timer" aria-label="Descanso" hidden></aside>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="modal" aria-labelledby="modal-title"></dialog>
+    <input
+      id="plan-file"
+      type="file"
+      accept=".docx,.txt"
+      hidden
+      aria-label="Importar nova ficha"
+    /><input
+      id="backup-file"
+      type="file"
+      accept=".json"
+      hidden
+      aria-label="Importar backup"
+    /><noscript
+      >Ative o JavaScript para usar o Treino Tiago. Seus dados ficam neste
+      aparelho.</noscript
+    >
   </body>
 </html>
