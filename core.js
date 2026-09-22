@@ -463,6 +463,68 @@
       0,
       ...records.flatMap((r) => r.entry.sets.map((s) => Number(s.weight) || 0)),
     );
+  function shiftDate(day, amount) {
+    const date = new Date(day + "T12:00:00");
+    date.setDate(date.getDate() + amount);
+    return localDate(date);
+  }
+  function periodStats(data, end = localDate(), days = 30) {
+    const start = shiftDate(end, 1 - days);
+    const sessions = data.sessions.filter(
+      (s) => s.date >= start && s.date <= end,
+    );
+    const result = {
+      start,
+      end,
+      activeDays: 0,
+      workouts: 0,
+      cardios: 0,
+      cardioMinutes: 0,
+      volume: 0,
+      strengthWorkouts: 0,
+      averageVolume: 0,
+      records: 0,
+    };
+    const dates = new Set();
+    for (const session of sessions) {
+      const entries = session.entries
+        .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done !== false) }))
+        .filter((e) => e.sets.length);
+      if (!entries.length) continue;
+      result.records++;
+      dates.add(session.date);
+      if (entries.some((e) => e.type !== "cardio")) result.workouts++;
+      let hasStrength = false;
+      for (const entry of entries) {
+        if (entry.type === "cardio") {
+          result.cardios++;
+          result.cardioMinutes += entry.sets.reduce(
+            (n, s) => n + (Number(s.minutes) || 0),
+            0,
+          );
+        }
+        if (entry.type === "forca") {
+          const validSets = entry.sets.filter((s) => !validateSet(s, "forca"));
+          if (validSets.length) {
+            hasStrength = true;
+            result.volume += volume({ sets: validSets });
+          }
+        }
+      }
+      if (hasStrength) result.strengthWorkouts++;
+    }
+    result.activeDays = dates.size;
+    result.averageVolume = result.strengthWorkouts
+      ? result.volume / result.strengthWorkouts
+      : 0;
+    return result;
+  }
+  function activityOverview(data, today = localDate()) {
+    const periods = Array.from({ length: 6 }, (_, i) =>
+      periodStats(data, shiftDate(today, -30 * (5 - i))),
+    );
+    return { current: periods[5], previous: periods[4], periods };
+  }
   function parsePlan(source, existing = [], sessions = []) {
     assert(
       typeof source === "string" && source.length < 500000,
@@ -620,6 +682,9 @@
     exerciseRecords,
     volume,
     maxWeight,
+    shiftDate,
+    periodStats,
+    activityOverview,
     parsePlan,
     planText,
     activateCycle,

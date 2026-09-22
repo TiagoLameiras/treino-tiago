@@ -3,6 +3,118 @@ const assert = require("node:assert/strict");
 const C = require("../core");
 const defaults = require("../default-plan");
 const base = () => C.migrate({}, defaults);
+test("resumo de 30 dias separa atividades e conta o mesmo dia uma vez", () => {
+  const d = base();
+  d.sessions = [
+    {
+      date: "2026-09-22",
+      entries: [
+        {
+          type: "forca",
+          sets: [
+            { weight: 100, reps: 5, done: true },
+            { weight: 60, reps: 12, done: true },
+            { weight: 1000, reps: 10, done: false },
+          ],
+        },
+        { type: "cardio", sets: [{ minutes: 10, done: true }] },
+      ],
+    },
+    {
+      date: "2026-09-22",
+      kind: "cardio",
+      entries: [{ type: "cardio", sets: [{ minutes: 45 }] }],
+    },
+    {
+      date: "2026-09-22",
+      kind: "cardio",
+      entries: [{ type: "cardio", sets: [{ minutes: 20 }] }],
+    },
+    {
+      date: "2026-09-21",
+      entries: [
+        { type: "forca", sets: [{ weight: 20, reps: 10 }] },
+        { type: "tempo", sets: [{ seconds: 30 }] },
+      ],
+    },
+    { date: "2026-09-20", entries: [] },
+  ];
+  d.activeSession = C.startSession(d, C.cycle(d).workouts[0]);
+  const original = C.clone(d),
+    stats = C.periodStats(d, "2026-09-22");
+  assert.equal(stats.activeDays, 2);
+  assert.equal(stats.workouts, 2);
+  assert.equal(stats.cardios, 3);
+  assert.equal(stats.cardioMinutes, 75);
+  assert.equal(stats.volume, 1420);
+  assert.equal(stats.averageVolume, 710);
+  assert.equal(stats.strengthWorkouts, 2);
+  assert.equal(stats.records, 4);
+  assert.deepEqual(d, original);
+});
+test("janelas de 30 dias incluem limites sem sobreposição, ignorando datas futuras", () => {
+  const d = base();
+  d.sessions = [
+    "2026-09-23",
+    "2026-09-22",
+    "2026-08-24",
+    "2026-08-23",
+    "2026-07-25",
+    "2026-07-24",
+  ].map((date) => ({
+    date,
+    entries: [{ type: "forca", sets: [{ weight: 20, reps: 10 }] }],
+  }));
+  const result = C.activityOverview(d, "2026-09-22");
+  assert.equal(result.current.start, "2026-08-24");
+  assert.equal(result.current.end, "2026-09-22");
+  assert.equal(result.previous.start, "2026-07-25");
+  assert.equal(result.previous.end, "2026-08-23");
+  assert.equal(result.current.workouts, 2);
+  assert.equal(result.previous.workouts, 2);
+  assert.equal(result.periods[3].workouts, 1);
+  assert.equal(result.periods.length, 6);
+  for (let i = 1; i < 6; i++)
+    assert.equal(
+      result.periods[i].start,
+      C.shiftDate(result.periods[i - 1].end, 1),
+    );
+  assert.equal(C.shiftDate("2024-03-01", -1), "2024-02-29");
+  assert.equal(C.shiftDate("2026-01-01", -1), "2025-12-31");
+});
+test("média ignora séries legadas incompletas e mantém peso corporal válido", () => {
+  const d = base();
+  d.sessions = [
+    {
+      date: "2026-09-22",
+      entries: [{ type: "forca", sets: [{ weight: "", reps: 10 }] }],
+    },
+    {
+      date: "2026-09-22",
+      entries: [{ type: "forca", sets: [{ weight: 0, reps: 10 }] }],
+    },
+    {
+      date: "2026-09-21",
+      entries: [{ type: "forca", sets: [{ weight: 20, reps: 10 }] }],
+    },
+  ];
+  const stats = C.periodStats(d, "2026-09-22");
+  assert.equal(stats.strengthWorkouts, 2);
+  assert.equal(stats.volume, 200);
+  assert.equal(stats.averageVolume, 100);
+  assert.equal(stats.workouts, 3);
+});
+test("visão geral vazia e cardio sem musculação retornam métricas finitas", () => {
+  const d = base();
+  assert.equal(C.activityOverview(d).current.averageVolume, 0);
+  C.saveCardio(d, { activity: "Boxe", minutes: 45, date: C.localDate() });
+  const stats = C.activityOverview(d).current;
+  assert.equal(stats.activeDays, 1);
+  assert.equal(stats.cardios, 1);
+  assert.equal(stats.workouts, 0);
+  assert.equal(stats.averageVolume, 0);
+  assert.equal(stats.volume, 0);
+});
 test("cardios no mesmo dia preservam ficha, sequência, rascunho e timer", () => {
   const d = base();
   d.activeSession = C.startSession(d, C.cycle(d).workouts[0]);

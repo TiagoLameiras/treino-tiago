@@ -1232,3 +1232,132 @@ dialog::backdrop {
   font-size: 0.85rem;
   padding: 8px 0 16px;
 }
+.recent-stat p {
+  margin: 0 0 9px;
+  line-height: 1.5;
+}
+.recent-stat > strong small {
+  display: block;
+  margin-top: 3px;
+}
+.progress-switch {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.progress-switch button {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 650;
+}
+.progress-switch button[aria-pressed="true"] {
+  background: var(--green);
+  color: #142213;
+}
+.overview-volume {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.overview-volume h2 {
+  font-size: clamp(2rem, 7vw, 3rem);
+  margin: 18px 0 10px;
+  overflow-wrap: anywhere;
+}
+.overview-volume h2 small {
+  margin-left: 6px;
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.comparison {
+  font-size: 0.85rem;
+  color: var(--green);
+}
+.overview-average {
+  border-top: 1px solid var(--line);
+  margin: 22px 0 18px;
+  padding-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+.overview-average > span,
+.overview-average > small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.overview-average > strong {
+  font-size: 1.35rem;
+}
+.overview-volume > p {
+  line-height: 1.6;
+}
+.overview-help {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.overview-help summary {
+  padding-top: 8px;
+}
+.overview-stats p {
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+.cardio-summary {
+  grid-column: 1 / -1;
+}
+.overview-trend {
+  padding: 22px;
+}
+.overview-trend h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+.overview-trend label {
+  margin-top: 20px;
+}
+.period-bars {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+}
+.period-bars li {
+  margin: 0 0 20px;
+}
+.period-bars li > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.period-bars strong {
+  font-weight: 600;
+  color: var(--text);
+}
+.period-track {
+  height: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #29362c;
+}
+.period-track i {
+  display: block;
+  height: 100%;
+  background: #789769;
+  border-radius: inherit;
+}
+.current-period .period-track i {
+  background: var(--green);
+}

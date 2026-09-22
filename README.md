@@ -18,6 +18,14 @@ Pode salvar várias atividades no mesmo dia, inclusive repetidas. O registro nã
 
 Cardios avulsos ficam em `sessions` com `kind: "cardio"`, separados dos ciclos de fichas e incluídos no backup completo. Os registros anteriores seguem compatíveis.
 
+## Resumo de 30 dias e evolução geral
+
+A home mantém a meta semanal e mostra os últimos 30 dias: dias ativos, treinos e cardios, comparando dias ativos com os 30 dias anteriores. O histórico completo continua disponível. O período inclui hoje e os 29 dias anteriores; as janelas não se sobrepõem.
+
+Evolução abre em **Geral**. O botão **Por exercício** mantém os filtros, gráficos e registros individuais. A visão geral mostra volume total de força (soma de carga × repetições), média por treino com séries de força válidas, dias ativos, treinos e minutos de cardio. Um gráfico compara seis períodos consecutivos de 30 dias, por volume total, volume médio, dias ativos ou cardio.
+
+Vários registros no mesmo dia contam uma vez em dias ativos. Descansos sem exercícios e sessões ainda em andamento não entram. Treinos contam sessões com exercícios de força ou tempo; cardios contam atividades de cardio, incluindo as da ficha. Séries legadas incompletas não entram no volume/média; séries válidas com carga zero continuam válidas. Sem base no período anterior, não é inventado percentual de melhora. Volume descreve trabalho registrado e depende da ficha e da quantidade de séries; não é uma medida global de ganho de força.
+
 ## Trocar a ficha a cada ciclo
 
 1. Em Fichas, baixe `modelo-treino.txt` ou a ficha atual.

@@ -36,6 +36,8 @@ let data,
   filterDate = "",
   filterCycle = "",
   reportKey = "",
+  progressView = "general",
+  overviewMetric = "volume",
   reportRange = "90",
   reportMetric = "volume",
   editor = null,
@@ -160,6 +162,7 @@ function renderToday() {
         .filter((s) => days.includes(s.date) && s.entries.length)
         .map((s) => s.date),
     ).size;
+  const recent = C.activityOverview(data);
   const suggested = C.suggest(data),
     workout = c.workouts.find((w) => w.id === pickedWorkout) || suggested;
   $("main").innerHTML =
@@ -168,7 +171,7 @@ function renderToday() {
       s
         ? sessionHTML(s)
         : `<section class="hero panel"><div class="row"><span class="pill">${data.settings.scheduleMode === "sequencia" ? "Próximo da sequência" : "Programado para hoje"}</span><span class="muted small">${esc(c.name)}</span></div><h2>${esc(workout?.name || "Dia de descanso")}</h2><p>${esc(workout?.goal || "Um intervalo também faz parte da rotina. Se quiser treinar hoje, escolha uma ficha abaixo.")}</p><div class="hero-meta"><span>${workout?.exercises.length || 0} exercícios</span><span>${workout ? workout.exercises.reduce((n, e) => n + C.countSets(e.sets), 0) : 0} séries previstas</span></div><label class="sr-only" for="workout-choice">Escolher treino</label><select id="workout-choice"><option value="" ${!workout ? "selected" : ""}>Escolha um treino</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${workout?.id === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="primary wide" data-action="start" data-id="${esc(workout?.id || "")}" ${!workout ? "disabled" : ""}>${workout?.exercises.length === 0 ? "Registrar descanso" : "Iniciar treino"} <span aria-hidden="true">→</span></button><button class="secondary wide cardio-button" data-action="cardio">＋ Registrar cardio</button></section>
-    <div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat"><span>Seu histórico</span><strong>${data.sessions.filter((s) => s.entries.length).length}<small> registros</small></strong><button class="text-button" data-tab="historico">Ver registros ↗</button></div></div>
+    <div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat recent-stat"><span>Últimos 30 dias</span><strong>${recent.current.activeDays}<small> dias ativos</small></strong><p class="small muted">${comparisonText(recent.current.activeDays, recent.previous.activeDays, "dias", recent.previous.records)}</p><p class="small muted">${recent.current.workouts} treinos · ${recent.current.cardios} cardios</p><button class="text-button" data-tab="historico">Ver histórico ↗</button></div></div>
     ${workout ? `<section><div class="section-title"><h2>O que vem pela frente</h2><span>${workout.exercises.length} exercícios</span></div><div class="preview-list">${workout.exercises.map((e, i) => `<details class="preview-exercise"><summary><span class="exercise-number">${String(i + 1).padStart(2, "0")}</span><span><strong>${esc(e.name)}</strong><small>${esc(e.sets)} séries · ${esc(e.reps)} · ${esc(e.rest)}</small></span><span aria-hidden="true">⌄</span></summary><p>${esc(e.notes || "Sem observações.")}</p></details>`).join("") || '<p class="muted">Sem exercícios programados. Registre este dia como descanso.</p>'}</div></section>` : ""}`
     }`;
 }
@@ -346,7 +349,57 @@ function metricValue(entry) {
     return entry.sets.reduce((n, s) => n + (Number(s.reps) || 0), 0);
   return C.volume(entry);
 }
+function progressHeader() {
+  return `<div class="page-heading"><div><p class="eyebrow">Um passo de cada vez</p><h1>Sua evolução</h1></div></div><div class="progress-switch" role="group" aria-label="Visão da evolução"><button data-action="progress-view" data-view="general" aria-pressed="${progressView === "general"}">Geral</button><button data-action="progress-view" data-view="exercise" aria-pressed="${progressView === "exercise"}">Por exercício</button></div>`;
+}
+function comparisonText(current, previous, unit, hasPrevious, percent = false) {
+  if (!hasPrevious) return "Sem registros nos 30 dias anteriores";
+  const difference = current - previous;
+  if (Math.abs(difference) < 0.00001) return "Igual aos 30 dias anteriores";
+  if (percent && previous === 0) return "Sem volume anterior para comparar";
+  const value = percent
+    ? Math.abs((difference / previous) * 100)
+    : Math.abs(difference);
+  if (value === 1 && ["dias", "treinos"].includes(unit))
+    unit = unit.slice(0, -1);
+  return `${difference > 0 ? "↑" : "↓"} ${fmt(value, { maximumFractionDigits: 1 })}${percent ? "%" : " " + unit} vs. 30 dias anteriores`;
+}
+function renderOverview() {
+  const { current, previous, periods } = C.activityOverview(data);
+  const metrics = {
+    volume: ["Volume total", "kg × reps"],
+    averageVolume: ["Volume médio por treino", "kg × reps"],
+    activeDays: ["Dias ativos", "dias"],
+    cardioMinutes: ["Tempo de cardio", "min"],
+  };
+  const [label, unit] = metrics[overviewMetric];
+  const max = Math.max(...periods.map((p) => p[overviewMetric]), 1);
+  const periodLabel = (p) =>
+    `${dateFmt(p.start, { day: "2-digit", month: "2-digit" })} – ${dateFmt(p.end, { day: "2-digit", month: "2-digit" })}`;
+  $("main").innerHTML =
+    progressHeader() +
+    `
+    <div class="section-title"><h2>Últimos 30 dias</h2><span>${periodLabel(current)}</span></div>
+    <section class="panel overview-volume"><span class="pill">Volume registrado</span><h2>${fmt(current.volume, { maximumFractionDigits: 0 })}<small> kg × reps</small></h2><p class="comparison">${comparisonText(current.volume, previous.volume, "", previous.strengthWorkouts, true)}</p>
+    <div class="overview-average"><span>Média por treino de força</span><strong>${current.strengthWorkouts ? fmt(current.averageVolume, { maximumFractionDigits: 0 }) + " kg × reps" : "—"}</strong><small>${current.strengthWorkouts ? comparisonText(current.averageVolume, previous.averageVolume, "", previous.strengthWorkouts, true) : "Registre séries com carga e repetições"}</small></div>
+    <details class="overview-help"><summary>Como interpretar esse número? ⌄</summary><p class="small muted">Soma de carga × repetições das séries registradas. Ex.: 20 kg × 10 repetições = 200 kg × reps. A média considera os treinos com séries de força preenchidas.</p>
+    <p class="small muted">Mais volume pode vir de mais séries ou de uma ficha diferente. Use os exercícios para comparar sua evolução de força.</p></details></section>
+    <div class="summary-grid overview-stats"><div class="panel stat"><span>Dias ativos</span><strong>${current.activeDays}<small> / 30 dias</small></strong><p class="small muted">${comparisonText(current.activeDays, previous.activeDays, "dias", previous.records)}</p></div>
+    <div class="panel stat"><span>Treinos realizados</span><strong>${current.workouts}<small> treinos</small></strong><p class="small muted">${comparisonText(current.workouts, previous.workouts, "treinos", previous.records)}</p></div>
+    <div class="panel stat cardio-summary"><span>Tempo de cardio</span><strong>${fmt(current.cardioMinutes, { maximumFractionDigits: 1 })}<small> min</small></strong><p class="small muted">${current.cardios} atividades · ${comparisonText(current.cardioMinutes, previous.cardioMinutes, "min", previous.cardios)}</p><p class="small muted">Inclui cardio avulso e registrado na ficha.</p></div></div>
+    <section class="panel overview-trend"><h2>Ao longo do tempo</h2><p class="small muted">6 períodos de 30 dias, incluindo o atual.</p><label>Indicador geral<select id="overview-metric">${Object.entries(
+      metrics,
+    )
+      .map(
+        ([key, item]) =>
+          `<option value="${key}" ${key === overviewMetric ? "selected" : ""}>${item[0]}</option>`,
+      )
+      .join("")}</select></label>
+    <ol class="period-bars" aria-label="${label} por período">${periods.map((p, i) => `<li class="${i === 5 ? "current-period" : ""}"><div><span>${periodLabel(p)}${i === 5 ? " · atual" : ""}</span><strong>${p.records ? fmt(p[overviewMetric], { maximumFractionDigits: 0 }) + " " + unit : "Sem registros"}</strong></div><div class="period-track" aria-hidden="true"><i style="width:${(p[overviewMetric] / max) * 100}%"></i></div></li>`).join("")}</ol></section>
+    <p class="small muted">Um dia com treino e cardio conta uma vez em dias ativos. Descansos e sessões ainda em andamento não entram. Comparações usam os registros salvos em cada período.</p>`;
+}
 function renderProgress() {
+  if (progressView === "general") return renderOverview();
   const catalog = exerciseCatalog();
   if (!catalog.some(([key]) => key === reportKey))
     reportKey =
@@ -356,7 +409,8 @@ function renderProgress() {
   const e = catalog.find(([key]) => key === reportKey)?.[1];
   if (!e) {
     $("main").innerHTML =
-      '<h1>Evolução</h1><div class="empty panel">Adicione exercícios à sua ficha para acompanhar a evolução.</div>';
+      progressHeader() +
+      '<div class="empty panel">Adicione exercícios à sua ficha para acompanhar a evolução.</div>';
     return;
   }
   const metrics =
@@ -387,7 +441,7 @@ function renderProgress() {
     distance: "km",
   }[reportMetric];
   $("main").innerHTML =
-    `<div class="page-heading"><div><p class="eyebrow">Um passo de cada vez</p><h1>Sua evolução</h1></div></div><div class="panel report-filters"><label>Exercício<select id="report-exercise">${catalog.map(([key, item]) => `<option value="${esc(key)}" ${key === reportKey ? "selected" : ""}>${esc(item.name)} · ${typeNames[item.type]}</option>`).join("")}</select></label><div class="form-grid"><label>Período<select id="report-range">${[
+    `${progressHeader()}<div class="panel report-filters"><label>Exercício<select id="report-exercise">${catalog.map(([key, item]) => `<option value="${esc(key)}" ${key === reportKey ? "selected" : ""}>${esc(item.name)} · ${typeNames[item.type]}</option>`).join("")}</select></label><div class="form-grid"><label>Período<select id="report-range">${[
       ["30", "30 dias"],
       ["90", "90 dias"],
       ["365", "1 ano"],
@@ -462,7 +516,7 @@ function settings() {
     c = C.cycle(data);
   openModal(
     "Ajustes e backup",
-    `<section class="settings-section"><h3>Do seu jeito</h3><label class="toggle-row"><span><strong>Timer de descanso</strong><small>Opcional para quando estiver sem o Garmin.</small></span><input id="setting-timer" type="checkbox" ${st.timer ? "checked" : ""} role="switch"></label><label>Descanso padrão em segundos<input id="setting-rest" type="number" min="5" max="900" value="${st.restSeconds}" inputmode="numeric"></label><p class="small muted">Ao concluir uma série, usa o intervalo do exercício. Mantenha o app aberto para acompanhar o alerta.</p><label>Meta de dias de treino por semana<input id="setting-goal" type="number" min="1" max="7" value="${st.weeklyGoal}" inputmode="numeric"></label></section><section class="settings-section"><h3>Organização da rotina</h3><label>Como sugerir o treino<select id="setting-mode"><option value="sequencia" ${st.scheduleMode === "sequencia" ? "selected" : ""}>Seguir a sequência das fichas</option><option value="semana" ${st.scheduleMode === "semana" ? "selected" : ""}>Definir por dia da semana</option></select></label><p class="small muted">Na sequência, o próximo treino avança quando você finaliza uma sessão. Nos dias fixos, a agenda abaixo define a sugestão.</p><div class="weekday-settings">${[1, 2, 3, 4, 5, 6, 0].map((day) => `<label>${names[day]}<select data-weekday="${day}"><option value="">Descanso</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${st.weekdays[day] === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select></label>`).join("")}</div></section><section class="settings-section"><h3>Seus dados ficam com você</h3><p class="small muted">Tudo fica neste navegador. Exportar salva fichas, histórico e o treino em andamento. Para levar ao computador, importe o arquivo por lá. Não há sincronização automática.</p><p class="small muted">Último backup exportado: ${data.lastBackupAt ? esc(new Date(data.lastBackupAt).toLocaleString("pt-BR")) : "ainda não exportado"}.</p><div class="button-stack"><button class="secondary" data-action="export-backup">↓ Exportar backup completo</button><button class="secondary" data-action="import-backup">↑ Restaurar backup</button><button class="text-button" data-action="recovery-backup">Baixar cópia anterior à última restauração</button></div><p class="small muted">Guarde o arquivo no iCloud Drive ou onde preferir, especialmente antes de limpar dados do navegador ou trocar de celular.</p></section><section class="settings-section"><button class="secondary wide" data-action="install">Adicionar à tela inicial</button><p class="small muted">Treino Tiago · versão 2.0 · uso local</p></section>`,
+    `<section class="settings-section"><h3>Do seu jeito</h3><label class="toggle-row"><span><strong>Timer de descanso</strong><small>Opcional para quando estiver sem o Garmin.</small></span><input id="setting-timer" type="checkbox" ${st.timer ? "checked" : ""} role="switch"></label><label>Descanso padrão em segundos<input id="setting-rest" type="number" min="5" max="900" value="${st.restSeconds}" inputmode="numeric"></label><p class="small muted">Ao concluir uma série, usa o intervalo do exercício. Mantenha o app aberto para acompanhar o alerta.</p><label>Meta de dias de treino por semana<input id="setting-goal" type="number" min="1" max="7" value="${st.weeklyGoal}" inputmode="numeric"></label></section><section class="settings-section"><h3>Organização da rotina</h3><label>Como sugerir o treino<select id="setting-mode"><option value="sequencia" ${st.scheduleMode === "sequencia" ? "selected" : ""}>Seguir a sequência das fichas</option><option value="semana" ${st.scheduleMode === "semana" ? "selected" : ""}>Definir por dia da semana</option></select></label><p class="small muted">Na sequência, o próximo treino avança quando você finaliza uma sessão. Nos dias fixos, a agenda abaixo define a sugestão.</p><div class="weekday-settings">${[1, 2, 3, 4, 5, 6, 0].map((day) => `<label>${names[day]}<select data-weekday="${day}"><option value="">Descanso</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${st.weekdays[day] === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select></label>`).join("")}</div></section><section class="settings-section"><h3>Seus dados ficam com você</h3><p class="small muted">Tudo fica neste navegador. Exportar salva fichas, histórico e o treino em andamento. Para levar ao computador, importe o arquivo por lá. Não há sincronização automática.</p><p class="small muted">Último backup exportado: ${data.lastBackupAt ? esc(new Date(data.lastBackupAt).toLocaleString("pt-BR")) : "ainda não exportado"}.</p><div class="button-stack"><button class="secondary" data-action="export-backup">↓ Exportar backup completo</button><button class="secondary" data-action="import-backup">↑ Restaurar backup</button><button class="text-button" data-action="recovery-backup">Baixar cópia anterior à última restauração</button></div><p class="small muted">Guarde o arquivo no iCloud Drive ou onde preferir, especialmente antes de limpar dados do navegador ou trocar de celular.</p></section><section class="settings-section"><button class="secondary wide" data-action="install">Adicionar à tela inicial</button><p class="small muted">Treino Tiago · versão 2.2 · uso local</p></section>`,
     `<button class="primary wide" data-action="save-settings">Salvar ajustes</button>`,
   );
 }
@@ -789,6 +843,10 @@ const actions = {
         if (commit((d) => d.sessions.push(s))) render();
       });
     }
+  },
+  "progress-view": (el) => {
+    progressView = el.dataset.view;
+    renderProgress();
   },
   cardio: () => cardioModal(),
   "edit-session": (el) => {
@@ -1254,6 +1312,10 @@ document.addEventListener("change", (event) => {
   if (el.id === "history-cycle") {
     filterCycle = el.value;
     renderHistory();
+  }
+  if (el.id === "overview-metric") {
+    overviewMetric = el.value;
+    renderProgress();
   }
   if (el.id === "report-exercise") {
     reportKey = el.value;
