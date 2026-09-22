@@ -280,13 +280,18 @@
   }
   function load(storage, defaults) {
     const saved = storage.getItem(KEY);
-    if (saved !== null) return validateData(JSON.parse(saved));
+    if (saved !== null) {
+      const data = validateData(JSON.parse(saved));
+      data.backupReminderStartedAt ||= new Date().toISOString();
+      return data;
+    }
     const old = {};
     for (const k of ["plan", "sessions", "draft"]) {
       const value = storage.getItem(`treinoTiago.${k}.v1`);
       if (value !== null) old[k] = JSON.parse(value);
     }
     const data = migrate(old, defaults);
+    data.backupReminderStartedAt = new Date().toISOString();
     validateData(data);
     return data;
   }
@@ -378,12 +383,10 @@
     data.activeSession = null;
     return result;
   }
-  function exerciseRecords(data, id, type, days = "all") {
-    const cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
-    if (days !== "all") cutoff.setDate(cutoff.getDate() - Number(days));
+  function exerciseRecords(data, id, type, days = "all", today = localDate()) {
+    const cutoff = days === "all" ? null : shiftDate(today, 1 - Number(days));
     return data.sessions
-      .filter((s) => days === "all" || new Date(s.date + "T12:00:00") >= cutoff)
+      .filter((s) => s.date <= today && (cutoff === null || s.date >= cutoff))
       .flatMap((s) =>
         s.entries
           .filter((e) => e.exerciseId === id && (!type || e.type === type))
@@ -467,6 +470,12 @@
     const date = new Date(day + "T12:00:00");
     date.setDate(date.getDate() + amount);
     return localDate(date);
+  }
+  function backupReminderDue(data, now = Date.now()) {
+    if (!data.sessions.length || data.activeSession) return false;
+    if (Date.parse(data.backupReminderSnoozedUntil) > now) return false;
+    const last = Date.parse(data.lastBackupAt || data.backupReminderStartedAt);
+    return Number.isFinite(last) && now - last >= 7 * 86400000;
   }
   function periodStats(data, end = localDate(), days = 30) {
     const start = shiftDate(end, 1 - days);
@@ -683,6 +692,7 @@
     volume,
     maxWeight,
     shiftDate,
+    backupReminderDue,
     periodStats,
     activityOverview,
     parsePlan,

@@ -46,6 +46,12 @@ O documento é lido no próprio aparelho. A biblioteca fflate 0.8.2 está inclu�
 - Dados salvos em outro navegador ou instalação podem pertencer a outro armazenamento. Mantenha um backup no aparelho de uso.
 - Se a leitura ou a gravação falhar, o app não apaga os dados e informa o problema. Há opção de exportação bruta para recuperação.
 
+## Refinamentos de uso
+
+- **Feito hoje:** resumo compacto na home dos registros salvos na data de hoje, com treino, cardio/duração e descanso. Tocar abre o histórico filtrado pelo dia, abrangendo todos os ciclos. Continua acessível enquanto outro treino está em andamento.
+- **Backup:** após sete dias sem exportar (ou sete dias após abrir esta versão pela primeira vez), a home mostra um lembrete se houver histórico salvo. Não aparece durante uma sessão em andamento. **Depois** adia por três dias, inclusive após fechar/reabrir o app; uma nova exportação reinicia o prazo. O app inicia o download e não consegue confirmar se o usuário guardou o arquivo. Sem notificações externas ou backup automático.
+- **Períodos:** Geral e Por exercício usam hoje mais os N−1 dias anteriores; registros futuros não entram nos relatórios. Textos secundários de séries, histórico e comparações têm tamanho e contraste maiores.
+
 ## Offline e atualizações
 
 O service worker prepara os arquivos do app após uma abertura com conexão, incluindo o modelo TXT e as dependências locais. Ativos usam rede com fallback para cache. A atualização de versão limpa apenas caches com o prefixo deste app; não toca nos registros. A versão original v1 pode exigir fechar e reabrir o app conectado para carregar a atualização.

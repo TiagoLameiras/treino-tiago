@@ -3,6 +3,68 @@ const assert = require("node:assert/strict");
 const C = require("../core");
 const defaults = require("../default-plan");
 const base = () => C.migrate({}, defaults);
+test("períodos individuais incluem exatamente N datas e coincidem com o Geral", () => {
+  const today = "2026-09-22";
+  for (const days of [30, 90, 365]) {
+    const dates = [
+      today,
+      C.shiftDate(today, 1 - days),
+      C.shiftDate(today, -days),
+      C.shiftDate(today, 1),
+    ];
+    const d = {
+      sessions: dates.map((date) => ({
+        date,
+        entries: [
+          { exerciseId: "x", type: "forca", sets: [{ weight: 10, reps: 10 }] },
+        ],
+      })),
+    };
+    const records = C.exerciseRecords(d, "x", "forca", days, today);
+    assert.deepEqual(
+      records.map((r) => r.session.date),
+      [dates[1], today],
+    );
+    assert.equal(records.length, C.periodStats(d, today, days).workouts);
+    assert.equal(C.exerciseRecords(d, "x", "forca", "all", today).length, 3);
+  }
+});
+test("lembrete respeita sete dias, adiamento e treino ativo; não aparece sem registros", () => {
+  const d = base(),
+    now = Date.parse("2026-09-22T12:00:00Z"),
+    day = 86400000;
+  d.backupReminderStartedAt = new Date(now - 7 * day).toISOString();
+  assert.equal(C.backupReminderDue(d, now), false);
+  d.sessions.push({ id: "test" });
+  assert.equal(C.backupReminderDue(d, now - 1), false);
+  assert.equal(C.backupReminderDue(d, now), true);
+  d.backupReminderSnoozedUntil = new Date(now + 3 * day).toISOString();
+  assert.equal(C.backupReminderDue(d, now + 3 * day - 1), false);
+  assert.equal(C.backupReminderDue(d, now + 3 * day), true);
+  delete d.backupReminderSnoozedUntil;
+  d.activeSession = {};
+  assert.equal(C.backupReminderDue(d, now), false);
+  d.activeSession = null;
+  d.lastBackupAt = new Date(now).toISOString();
+  assert.equal(C.backupReminderDue(d, now + 7 * day - 1), false);
+  assert.equal(C.backupReminderDue(d, now + 7 * day), true);
+});
+test("carregamento inicia prazo de backup sem alterar armazenamento e preserva adiamento", () => {
+  const d = base(),
+    raw = JSON.stringify(d);
+  const storage = { getItem: (key) => (key === C.KEY ? raw : null) };
+  const loaded = C.load(storage, defaults);
+  assert.ok(Number.isFinite(Date.parse(loaded.backupReminderStartedAt)));
+  assert.equal(storage.getItem(C.KEY), raw);
+  loaded.backupReminderSnoozedUntil = "2026-10-01T12:00:00Z";
+  const saved = JSON.stringify(loaded);
+  const again = C.load({ getItem: () => saved }, defaults);
+  assert.equal(again.backupReminderStartedAt, loaded.backupReminderStartedAt);
+  assert.equal(
+    again.backupReminderSnoozedUntil,
+    loaded.backupReminderSnoozedUntil,
+  );
+});
 test("resumo de 30 dias separa atividades e conta o mesmo dia uma vez", () => {
   const d = base();
   d.sessions = [

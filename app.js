@@ -153,6 +153,20 @@ function weekStrip() {
     })
     .join("")}</div>`;
 }
+function todaySummaryHTML() {
+  const sessions = data.sessions.filter((s) => s.date === C.localDate());
+  if (!sessions.length) return "";
+  const labels = sessions.map((s) =>
+    s.kind === "cardio"
+      ? s.workoutName + " · " + setText(s.entries[0].sets[0], "cardio")
+      : s.workoutName + (s.entries.length ? " concluído" : " registrado"),
+  );
+  return `<button class="panel today-summary" data-action="today-history"><span class="today-summary-title"><strong>✓ Feito hoje</strong><span>${sessions.length} ${sessions.length === 1 ? "registro" : "registros"} ↗</span></span><span class="today-summary-items">${esc(labels.slice(0, 3).join(" · "))}${labels.length > 3 ? " · +" + (labels.length - 3) : ""}</span></button>`;
+}
+function backupNoticeHTML() {
+  if (!C.backupReminderDue(data)) return "";
+  return `<aside class="panel backup-notice" aria-label="Lembrete de backup"><strong>Uma cópia do seu histórico</strong><p>${data.lastBackupAt ? "Faz pelo menos 7 dias desde a última exportação." : "Você já tem registros salvos. Que tal guardar seu primeiro backup?"} Baixe o arquivo e guarde fora do navegador.</p><div><button class="secondary" data-action="export-backup">Salvar backup</button><button class="text-button" data-action="snooze-backup">Depois</button></div><small>Depois adia este lembrete por 3 dias.</small></aside>`;
+}
 function renderToday() {
   const c = C.cycle(data),
     s = data.activeSession;
@@ -169,10 +183,10 @@ function renderToday() {
     `<div class="page-heading"><div><p class="eyebrow">${esc(dateFmt(C.localDate(), { weekday: "long", day: "numeric", month: "long" }))}</p><h1>${s ? "Seu treino, em foco." : "Vamos no seu ritmo."}</h1></div><span class="local-tag"><span></span> Neste aparelho</span></div>${weekStrip()}
     ${
       s
-        ? sessionHTML(s)
+        ? todaySummaryHTML() + sessionHTML(s)
         : `<section class="hero panel"><div class="row"><span class="pill">${data.settings.scheduleMode === "sequencia" ? "Próximo da sequência" : "Programado para hoje"}</span><span class="muted small">${esc(c.name)}</span></div><h2>${esc(workout?.name || "Dia de descanso")}</h2><p>${esc(workout?.goal || "Um intervalo também faz parte da rotina. Se quiser treinar hoje, escolha uma ficha abaixo.")}</p><div class="hero-meta"><span>${workout?.exercises.length || 0} exercícios</span><span>${workout ? workout.exercises.reduce((n, e) => n + C.countSets(e.sets), 0) : 0} séries previstas</span></div><label class="sr-only" for="workout-choice">Escolher treino</label><select id="workout-choice"><option value="" ${!workout ? "selected" : ""}>Escolha um treino</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${workout?.id === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="primary wide" data-action="start" data-id="${esc(workout?.id || "")}" ${!workout ? "disabled" : ""}>${workout?.exercises.length === 0 ? "Registrar descanso" : "Iniciar treino"} <span aria-hidden="true">→</span></button><button class="secondary wide cardio-button" data-action="cardio">＋ Registrar cardio</button></section>
-    <div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat recent-stat"><span>Últimos 30 dias</span><strong>${recent.current.activeDays}<small> dias ativos</small></strong><p class="small muted">${comparisonText(recent.current.activeDays, recent.previous.activeDays, "dias", recent.previous.records)}</p><p class="small muted">${recent.current.workouts} treinos · ${recent.current.cardios} cardios</p><button class="text-button" data-tab="historico">Ver histórico ↗</button></div></div>
-    ${workout ? `<section><div class="section-title"><h2>O que vem pela frente</h2><span>${workout.exercises.length} exercícios</span></div><div class="preview-list">${workout.exercises.map((e, i) => `<details class="preview-exercise"><summary><span class="exercise-number">${String(i + 1).padStart(2, "0")}</span><span><strong>${esc(e.name)}</strong><small>${esc(e.sets)} séries · ${esc(e.reps)} · ${esc(e.rest)}</small></span><span aria-hidden="true">⌄</span></summary><p>${esc(e.notes || "Sem observações.")}</p></details>`).join("") || '<p class="muted">Sem exercícios programados. Registre este dia como descanso.</p>'}</div></section>` : ""}`
+    ${todaySummaryHTML()}<div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat recent-stat"><span>Últimos 30 dias</span><strong>${recent.current.activeDays}<small> dias ativos</small></strong><p class="small muted">${comparisonText(recent.current.activeDays, recent.previous.activeDays, "dias", recent.previous.records)}</p><p class="small muted">${recent.current.workouts} treinos · ${recent.current.cardios} cardios</p><button class="text-button" data-tab="historico">Ver histórico ↗</button></div></div>
+    ${backupNoticeHTML()}${workout ? `<section><div class="section-title"><h2>O que vem pela frente</h2><span>${workout.exercises.length} exercícios</span></div><div class="preview-list">${workout.exercises.map((e, i) => `<details class="preview-exercise"><summary><span class="exercise-number">${String(i + 1).padStart(2, "0")}</span><span><strong>${esc(e.name)}</strong><small>${esc(e.sets)} séries · ${esc(e.reps)} · ${esc(e.rest)}</small></span><span aria-hidden="true">⌄</span></summary><p>${esc(e.notes || "Sem observações.")}</p></details>`).join("") || '<p class="muted">Sem exercícios programados. Registre este dia como descanso.</p>'}</div></section>` : ""}`
     }`;
 }
 function previousEntry(entry, session) {
@@ -516,7 +530,7 @@ function settings() {
     c = C.cycle(data);
   openModal(
     "Ajustes e backup",
-    `<section class="settings-section"><h3>Do seu jeito</h3><label class="toggle-row"><span><strong>Timer de descanso</strong><small>Opcional para quando estiver sem o Garmin.</small></span><input id="setting-timer" type="checkbox" ${st.timer ? "checked" : ""} role="switch"></label><label>Descanso padrão em segundos<input id="setting-rest" type="number" min="5" max="900" value="${st.restSeconds}" inputmode="numeric"></label><p class="small muted">Ao concluir uma série, usa o intervalo do exercício. Mantenha o app aberto para acompanhar o alerta.</p><label>Meta de dias de treino por semana<input id="setting-goal" type="number" min="1" max="7" value="${st.weeklyGoal}" inputmode="numeric"></label></section><section class="settings-section"><h3>Organização da rotina</h3><label>Como sugerir o treino<select id="setting-mode"><option value="sequencia" ${st.scheduleMode === "sequencia" ? "selected" : ""}>Seguir a sequência das fichas</option><option value="semana" ${st.scheduleMode === "semana" ? "selected" : ""}>Definir por dia da semana</option></select></label><p class="small muted">Na sequência, o próximo treino avança quando você finaliza uma sessão. Nos dias fixos, a agenda abaixo define a sugestão.</p><div class="weekday-settings">${[1, 2, 3, 4, 5, 6, 0].map((day) => `<label>${names[day]}<select data-weekday="${day}"><option value="">Descanso</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${st.weekdays[day] === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select></label>`).join("")}</div></section><section class="settings-section"><h3>Seus dados ficam com você</h3><p class="small muted">Tudo fica neste navegador. Exportar salva fichas, histórico e o treino em andamento. Para levar ao computador, importe o arquivo por lá. Não há sincronização automática.</p><p class="small muted">Último backup exportado: ${data.lastBackupAt ? esc(new Date(data.lastBackupAt).toLocaleString("pt-BR")) : "ainda não exportado"}.</p><div class="button-stack"><button class="secondary" data-action="export-backup">↓ Exportar backup completo</button><button class="secondary" data-action="import-backup">↑ Restaurar backup</button><button class="text-button" data-action="recovery-backup">Baixar cópia anterior à última restauração</button></div><p class="small muted">Guarde o arquivo no iCloud Drive ou onde preferir, especialmente antes de limpar dados do navegador ou trocar de celular.</p></section><section class="settings-section"><button class="secondary wide" data-action="install">Adicionar à tela inicial</button><p class="small muted">Treino Tiago · versão 2.2 · uso local</p></section>`,
+    `<section class="settings-section"><h3>Do seu jeito</h3><label class="toggle-row"><span><strong>Timer de descanso</strong><small>Opcional para quando estiver sem o Garmin.</small></span><input id="setting-timer" type="checkbox" ${st.timer ? "checked" : ""} role="switch"></label><label>Descanso padrão em segundos<input id="setting-rest" type="number" min="5" max="900" value="${st.restSeconds}" inputmode="numeric"></label><p class="small muted">Ao concluir uma série, usa o intervalo do exercício. Mantenha o app aberto para acompanhar o alerta.</p><label>Meta de dias de treino por semana<input id="setting-goal" type="number" min="1" max="7" value="${st.weeklyGoal}" inputmode="numeric"></label></section><section class="settings-section"><h3>Organização da rotina</h3><label>Como sugerir o treino<select id="setting-mode"><option value="sequencia" ${st.scheduleMode === "sequencia" ? "selected" : ""}>Seguir a sequência das fichas</option><option value="semana" ${st.scheduleMode === "semana" ? "selected" : ""}>Definir por dia da semana</option></select></label><p class="small muted">Na sequência, o próximo treino avança quando você finaliza uma sessão. Nos dias fixos, a agenda abaixo define a sugestão.</p><div class="weekday-settings">${[1, 2, 3, 4, 5, 6, 0].map((day) => `<label>${names[day]}<select data-weekday="${day}"><option value="">Descanso</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${st.weekdays[day] === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select></label>`).join("")}</div></section><section class="settings-section"><h3>Seus dados ficam com você</h3><p class="small muted">Tudo fica neste navegador. Exportar salva fichas, histórico e o treino em andamento. Para levar ao computador, importe o arquivo por lá. Não há sincronização automática.</p><p class="small muted" id="last-backup-status">Último backup exportado: ${data.lastBackupAt ? esc(new Date(data.lastBackupAt).toLocaleString("pt-BR")) : "ainda não exportado"}.</p><div class="button-stack"><button class="secondary" data-action="export-backup">↓ Exportar backup completo</button><button class="secondary" data-action="import-backup">↑ Restaurar backup</button><button class="text-button" data-action="recovery-backup">Baixar cópia anterior à última restauração</button></div><p class="small muted">Guarde o arquivo no iCloud Drive ou onde preferir, especialmente antes de limpar dados do navegador ou trocar de celular.</p></section><section class="settings-section"><button class="secondary wide" data-action="install">Adicionar à tela inicial</button><p class="small muted">Treino Tiago · versão 2.3 · uso local</p></section>`,
     `<button class="primary wide" data-action="save-settings">Salvar ajustes</button>`,
   );
 }
@@ -1161,24 +1175,54 @@ const actions = {
     filterDate = "";
     go("historico");
   },
+  "today-history": () => {
+    filterDate = C.localDate();
+    filterCycle = "";
+    month = filterDate.slice(0, 7);
+    go("historico");
+  },
+  "snooze-backup": () => {
+    if (
+      commit((d) => {
+        d.backupReminderSnoozedUntil = new Date(
+          Date.now() + 3 * 86400000,
+        ).toISOString();
+      })
+    )
+      render();
+  },
   "export-backup": () => {
-    commit((d) => {
-      d.lastBackupAt = new Date().toISOString();
-    });
+    const exportedAt = new Date().toISOString();
+    const exportedData = C.clone(data);
+    exportedData.lastBackupAt = exportedAt;
+    delete exportedData.backupReminderSnoozedUntil;
     download(
       `treino-tiago-backup-${C.localDate()}.json`,
       JSON.stringify(
         {
           app: "Treino Tiago",
           version: 2,
-          exportedAt: new Date().toISOString(),
-          data,
+          exportedAt,
+          data: exportedData,
         },
         null,
         2,
       ),
     );
-    toast("Backup exportado. Guarde o arquivo em um lugar seguro.");
+    if (
+      !commit((d) => {
+        d.lastBackupAt = exportedAt;
+        delete d.backupReminderSnoozedUntil;
+      })
+    )
+      return;
+    if (tab === "hoje") renderToday();
+    if ($("last-backup-status"))
+      $("last-backup-status").textContent =
+        "Último backup exportado: " +
+        new Date(exportedAt).toLocaleString("pt-BR") +
+        ".";
+    toast("Download do backup iniciado. Guarde o arquivo em um lugar seguro.");
   },
   "import-backup": () => {
     $("backup-file").click();
