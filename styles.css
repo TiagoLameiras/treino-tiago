@@ -1209,3 +1209,26 @@ dialog::backdrop {
 .has-timer .finish-bar {
   bottom: 176px;
 }
+
+.cardio-button {
+  margin-top: 12px;
+}
+#cardio-form {
+  display: grid;
+  gap: 18px;
+}
+#cardio-other-label[hidden] {
+  display: none;
+}
+.cardio-details label + label {
+  margin-top: 18px;
+}
+.cardio-details {
+  margin-top: 18px;
+}
+.cardio-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 8px 0 16px;
+}

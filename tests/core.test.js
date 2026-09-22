@@ -3,6 +3,95 @@ const assert = require("node:assert/strict");
 const C = require("../core");
 const defaults = require("../default-plan");
 const base = () => C.migrate({}, defaults);
+test("cardios no mesmo dia preservam ficha, sequência, rascunho e timer", () => {
+  const d = base();
+  d.activeSession = C.startSession(d, C.cycle(d).workouts[0]);
+  d.restEnd = Date.now() + 90000;
+  const before = C.clone(d);
+  const a = C.saveCardio(d, {
+    activity: "Boxe",
+    minutes: "45",
+    date: C.localDate(),
+  });
+  const b = C.saveCardio(d, {
+    activity: "Caminhada rápida",
+    minutes: "20.5",
+    distance: "2.1",
+    date: C.localDate(),
+  });
+  assert.notEqual(a.id, b.id);
+  assert.equal(d.sessions.length, 2);
+  for (const key of [
+    "cycles",
+    "nextWorkoutId",
+    "activeSession",
+    "restEnd",
+    "legacyDraft",
+  ])
+    assert.deepEqual(d[key], before[key]);
+  assert.equal(b.entries[0].sets[0].minutes, 20.5);
+  C.validateData(d);
+});
+test("editar cardio mantém identidade e permite corrigir data, tipo e duração", () => {
+  const d = base();
+  const original = C.saveCardio(d, {
+    activity: "Boxe",
+    minutes: 30,
+    date: C.localDate(),
+  });
+  const edited = C.saveCardio(
+    d,
+    { activity: "Corrida", minutes: 25, date: "2026-01-01", notes: "Esteira" },
+    original.id,
+  );
+  assert.equal(d.sessions.length, 1);
+  assert.equal(edited.id, original.id);
+  assert.equal(edited.startedAt, original.startedAt);
+  assert.equal(edited.date, "2026-01-01");
+  assert.equal(edited.notes, "Esteira");
+  assert.equal(
+    C.exerciseRecords(d, "cardio-avulso-corrida", "cardio").length,
+    1,
+  );
+  assert.equal(C.exerciseRecords(d, "cardio-avulso-boxe", "cardio").length, 0);
+});
+test("cardio rejeita duração, distância, tipo e data inválidos sem modificar dados", () => {
+  const d = base(),
+    before = C.clone(d);
+  const input = { activity: "Boxe", minutes: 30, date: C.localDate() };
+  for (const invalid of [
+    { minutes: 0 },
+    { minutes: -1 },
+    { minutes: "" },
+    { minutes: "abc" },
+    { distance: -2 },
+    { activity: "  " },
+    { date: "2099-01-01" },
+    { date: "2026-02-30" },
+    { notes: "x".repeat(2001) },
+  ]) {
+    assert.throws(() => C.saveCardio(d, { ...input, ...invalid }));
+    assert.deepEqual(d, before);
+  }
+  assert.throws(() => C.saveCardio(d, input, "missing"));
+});
+test("backup de cardio preserva registros e valida formato; ciclos novos não apagam cardio", () => {
+  const d = base();
+  C.saveCardio(d, {
+    activity: "Caminhada leve",
+    minutes: 15,
+    date: C.localDate(),
+  });
+  const restored = C.backupData(
+    JSON.parse(JSON.stringify({ app: "Treino Tiago", version: 2, data: d })),
+    defaults,
+  );
+  assert.deepEqual(restored, d);
+  C.activateCycle(restored, { ...C.clone(C.cycle(d)), id: C.uid() });
+  assert.deepEqual(restored.sessions, d.sessions);
+  restored.sessions[0].entries[0].sets[0].minutes = 0;
+  assert.throws(() => C.validateData(restored));
+});
 test("migração conserva ficha, sessões, rascunhos e data local; timer desativado", () => {
   const old = {
     plan: defaults,

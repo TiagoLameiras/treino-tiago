@@ -10,6 +10,14 @@ App pessoal de treino, pensado para celular e publicado no GitHub Pages. Tudo fi
 - **Fichas:** editar e ordenar exercícios, criar/duplicar/arquivar treinos, baixar modelo, importar TXT ou DOCX com prévia, consultar ciclos antigos.
 - **Ajustes:** timer opcional (desativado por padrão para uso com Garmin), rotina semanal, meta e backup.
 
+## Cardio fora da ficha
+
+Em **Hoje → Registrar cardio**, abaixo de Iniciar treino, registre uma atividade já concluída. Informe o tipo (corrida, caminhada rápida/leve, boxe, bicicleta, elíptico, escada, natação ou outro), a duração em minutos e a data. Distância em km e observações são opcionais e ficam recolhidas.
+
+Pode salvar várias atividades no mesmo dia, inclusive repetidas. O registro não muda a ficha, a sequência, o timer ou a sessão em andamento. Também há um acesso no resumo do treino em andamento. Cada cardio aparece no Histórico, com filtro Cardio avulso, edição pelo mesmo formulário e exclusão com desfazer. Em Evolução, escolha a atividade para consultar duração/distância. Os dias com cardio contam para a frequência semanal uma única vez por dia.
+
+Cardios avulsos ficam em `sessions` com `kind: "cardio"`, separados dos ciclos de fichas e incluídos no backup completo. Os registros anteriores seguem compatíveis.
+
 ## Trocar a ficha a cada ciclo
 
 1. Em Fichas, baixe `modelo-treino.txt` ou a ficha atual.

@@ -222,6 +222,20 @@
               );
         });
       });
+      if (s.kind === "cardio") {
+        assert(!active, "Cardio avulso deve ser salvo após a atividade.");
+        text(s.activity, "Atividade", 100);
+        text(s.notes || "", "Observações", 2000);
+        assert(
+          s.activity.trim() &&
+            s.entries.length === 1 &&
+            s.entries[0].type === "cardio" &&
+            s.entries[0].sets.length === 1,
+          "Registro de cardio inválido.",
+        );
+        const error = validateSet(s.entries[0].sets[0], "cardio");
+        assert(!error, error);
+      }
       if (active) {
         assert(
           s.workout && Array.isArray(s.workout.exercises),
@@ -382,6 +396,62 @@
             String(b.session.startedAt || b.session.updatedAt),
           ),
       );
+  }
+  function saveCardio(data, input, id = null) {
+    const activity = String(input.activity || "").trim();
+    text(activity, "Atividade", 100);
+    assert(activity && slug(activity), "Informe o tipo de cardio.");
+    assert(
+      dateOK(input.date) && input.date <= localDate(),
+      "Escolha uma data válida, até hoje.",
+    );
+    const set = {
+      minutes: input.minutes,
+      distance: input.distance ?? "",
+      done: true,
+    };
+    const error = validateSet(set, "cardio");
+    assert(!error, error);
+    const notes = String(input.notes || "").trim();
+    text(notes, "Observações", 2000);
+    const index = id
+      ? data.sessions.findIndex((s) => s.id === id && s.kind === "cardio")
+      : -1;
+    assert(!id || index >= 0, "Registro de cardio não encontrado.");
+    const previous = index >= 0 ? data.sessions[index] : null;
+    const now = new Date().toISOString();
+    const result = {
+      id: previous?.id || uid(),
+      kind: "cardio",
+      activity,
+      date: input.date,
+      workoutId: "cardio-avulso-" + slug(activity),
+      workoutName: activity,
+      cycleId: "cardio-avulso",
+      cycleName: "Cardio avulso",
+      notes,
+      startedAt: previous?.startedAt || now,
+      updatedAt: now,
+      elapsedMs: Number(set.minutes) * 60000,
+      runningSince: null,
+      entries: [
+        {
+          exerciseId: "cardio-avulso-" + slug(activity),
+          exerciseName: activity,
+          type: "cardio",
+          sets: [
+            {
+              ...set,
+              minutes: Number(set.minutes),
+              distance: set.distance === "" ? "" : Number(set.distance),
+            },
+          ],
+        },
+      ],
+    };
+    if (index >= 0) data.sessions[index] = result;
+    else data.sessions.push(result);
+    return result;
   }
   const volume = (entry) =>
     entry.sets.reduce(
@@ -546,6 +616,7 @@
     startSession,
     elapsed,
     finish,
+    saveCardio,
     exerciseRecords,
     volume,
     maxWeight,

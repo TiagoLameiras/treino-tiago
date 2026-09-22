@@ -19,6 +19,16 @@ const typeNames = {
   tempo: "Tempo em segundos",
   cardio: "Cardio",
 };
+const cardioTypes = [
+  "Corrida",
+  "Caminhada rápida",
+  "Caminhada leve",
+  "Boxe",
+  "Bicicleta",
+  "Elíptico",
+  "Escada",
+  "Natação",
+];
 let data,
   tab = "hoje",
   pickedWorkout = "",
@@ -157,8 +167,8 @@ function renderToday() {
     ${
       s
         ? sessionHTML(s)
-        : `<section class="hero panel"><div class="row"><span class="pill">${data.settings.scheduleMode === "sequencia" ? "Próximo da sequência" : "Programado para hoje"}</span><span class="muted small">${esc(c.name)}</span></div><h2>${esc(workout?.name || "Dia de descanso")}</h2><p>${esc(workout?.goal || "Um intervalo também faz parte da rotina. Se quiser treinar hoje, escolha uma ficha abaixo.")}</p><div class="hero-meta"><span>${workout?.exercises.length || 0} exercícios</span><span>${workout ? workout.exercises.reduce((n, e) => n + C.countSets(e.sets), 0) : 0} séries previstas</span></div><label class="sr-only" for="workout-choice">Escolher treino</label><select id="workout-choice"><option value="" ${!workout ? "selected" : ""}>Escolha um treino</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${workout?.id === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="primary wide" data-action="start" data-id="${esc(workout?.id || "")}" ${!workout ? "disabled" : ""}>${workout?.exercises.length === 0 ? "Registrar descanso" : "Iniciar treino"} <span aria-hidden="true">→</span></button></section>
-    <div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat"><span>Seu histórico</span><strong>${data.sessions.filter((s) => s.entries.length).length}<small> treinos</small></strong><button class="text-button" data-tab="historico">Ver registros ↗</button></div></div>
+        : `<section class="hero panel"><div class="row"><span class="pill">${data.settings.scheduleMode === "sequencia" ? "Próximo da sequência" : "Programado para hoje"}</span><span class="muted small">${esc(c.name)}</span></div><h2>${esc(workout?.name || "Dia de descanso")}</h2><p>${esc(workout?.goal || "Um intervalo também faz parte da rotina. Se quiser treinar hoje, escolha uma ficha abaixo.")}</p><div class="hero-meta"><span>${workout?.exercises.length || 0} exercícios</span><span>${workout ? workout.exercises.reduce((n, e) => n + C.countSets(e.sets), 0) : 0} séries previstas</span></div><label class="sr-only" for="workout-choice">Escolher treino</label><select id="workout-choice"><option value="" ${!workout ? "selected" : ""}>Escolha um treino</option>${c.workouts.map((w) => `<option value="${esc(w.id)}" ${workout?.id === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="primary wide" data-action="start" data-id="${esc(workout?.id || "")}" ${!workout ? "disabled" : ""}>${workout?.exercises.length === 0 ? "Registrar descanso" : "Iniciar treino"} <span aria-hidden="true">→</span></button><button class="secondary wide cardio-button" data-action="cardio">＋ Registrar cardio</button></section>
+    <div class="summary-grid"><div class="panel stat"><span>Na semana</span><strong>${count}<small> / ${data.settings.weeklyGoal} dias</small></strong><div class="progress-track"><i style="width:${Math.min(100, (count / data.settings.weeklyGoal) * 100)}%"></i></div></div><div class="panel stat"><span>Seu histórico</span><strong>${data.sessions.filter((s) => s.entries.length).length}<small> registros</small></strong><button class="text-button" data-tab="historico">Ver registros ↗</button></div></div>
     ${workout ? `<section><div class="section-title"><h2>O que vem pela frente</h2><span>${workout.exercises.length} exercícios</span></div><div class="preview-list">${workout.exercises.map((e, i) => `<details class="preview-exercise"><summary><span class="exercise-number">${String(i + 1).padStart(2, "0")}</span><span><strong>${esc(e.name)}</strong><small>${esc(e.sets)} séries · ${esc(e.reps)} · ${esc(e.rest)}</small></span><span aria-hidden="true">⌄</span></summary><p>${esc(e.notes || "Sem observações.")}</p></details>`).join("") || '<p class="muted">Sem exercícios programados. Registre este dia como descanso.</p>'}</div></section>` : ""}`
     }`;
 }
@@ -184,7 +194,7 @@ function sessionHTML(s) {
       (n, e) => n + e.sets.filter((v) => v.done).length,
       0,
     );
-  return `<section class="session-overview panel"><div class="row"><span class="pill">${s.editing ? "Editando registro" : s.runningSince ? "Em andamento" : "Pausado"}</span><span id="session-clock" class="mono"></span></div><h2>${esc(s.workoutName)}</h2><div class="row"><label>Data do treino<input id="session-date" type="date" max="${C.localDate()}" value="${s.date}"></label><button class="secondary" data-action="pause">${s.runningSince ? "Pausar" : "Continuar"}</button></div><div class="row small muted"><span id="session-progress">${done} de ${total} séries concluídas</span><button class="text-button" data-action="discard">${s.editing ? "Cancelar edição" : "Descartar"}</button></div><div class="progress-track"><i id="session-bar" style="width:${total ? (done / total) * 100 : 100}%"></i></div></section>
+  return `<section class="session-overview panel"><div class="row"><span class="pill">${s.editing ? "Editando registro" : s.runningSince ? "Em andamento" : "Pausado"}</span><span id="session-clock" class="mono"></span></div><h2>${esc(s.workoutName)}</h2><div class="row"><label>Data do treino<input id="session-date" type="date" max="${C.localDate()}" value="${s.date}"></label><button class="secondary" data-action="pause">${s.runningSince ? "Pausar" : "Continuar"}</button></div><div class="row small muted"><span id="session-progress">${done} de ${total} séries concluídas</span><button class="text-button" data-action="discard">${s.editing ? "Cancelar edição" : "Descartar"}</button></div><div class="progress-track"><i id="session-bar" style="width:${total ? (done / total) * 100 : 100}%"></i></div><button class="text-button cardio-button" data-action="cardio">＋ Registrar cardio</button></section>
     <div class="exercise-list">${s.entries.map((entry, i) => exerciseHTML(entry, i, s)).join("")}</div>
     <label class="session-note">Como foi o treino?<textarea id="session-notes" maxlength="2000" placeholder="Uma observação para a próxima sessão…">${esc(s.notes || "")}</textarea></label>
     <div class="finish-bar"><span><strong id="done-count">${done}</strong> / ${total} séries</span><button class="primary" data-action="finish">${s.editing ? "Salvar alterações" : "Finalizar treino"} ✓</button></div>`;
@@ -244,17 +254,61 @@ function renderHistory() {
         return `<button class="calendar-day ${ss.length ? "has-session" : ""} ${filterDate === day ? "selected" : ""} ${day === C.localDate() ? "is-today" : ""}" data-action="filter-day" data-day="${day}" aria-label="${esc(dateFmt(day, { day: "numeric", month: "long" }))}, ${ss.length} registros" aria-pressed="${filterDate === day}">${i + 1}<i>${ss.length ? "•" : ""}</i></button>`;
       },
     ).join("")}</div></section>
-    <div class="row filters"><label>Ciclo<select id="history-cycle"><option value="">Todos os ciclos</option>${data.cycles.map((c) => `<option value="${esc(c.id)}" ${filterCycle === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>${filterDate ? `<button class="text-button" data-action="clear-date">${esc(dateFmt(filterDate))} ×</button>` : '<span class="muted small">Do mais recente ao mais antigo</span>'}</div><div class="section-title"><h2>${filterDate ? "Registros do dia" : "Todos os registros"}</h2><span>${sessions.length}</span></div>
-    <div class="history-list">${sessions.map((s) => `<button class="history-card panel" data-action="session-detail" data-id="${esc(s.id)}"><span class="history-date"><strong>${s.date.slice(-2)}</strong><small>${esc(dateFmt(s.date, { month: "short" }))}</small></span><span class="history-info"><strong>${esc(s.workoutName)}</strong><small>${esc(s.cycleName || "Ficha original")} · ${s.entries.reduce((n, e) => n + e.sets.length, 0)} séries${s.elapsedMs ? " · " + Math.round(s.elapsedMs / 60000) + " min" : ""}</small></span><span aria-hidden="true">↗</span></button>`).join("") || '<div class="empty panel"><span class="empty-icon">▦</span><h3>Seu caminho começa aqui</h3><p>Nenhum registro neste filtro. Você também pode registrar um treino de outro dia.</p><button class="secondary" data-action="retro">Registrar treino</button></div>'}</div>`;
+    <div class="row filters"><label>Ciclo<select id="history-cycle"><option value="">Todos os registros</option><option value="cardio-avulso" ${filterCycle === "cardio-avulso" ? "selected" : ""}>Cardio avulso</option>${data.cycles.map((c) => `<option value="${esc(c.id)}" ${filterCycle === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>${filterDate ? `<button class="text-button" data-action="clear-date">${esc(dateFmt(filterDate))} ×</button>` : '<span class="muted small">Do mais recente ao mais antigo</span>'}</div><div class="section-title"><h2>${filterDate ? "Registros do dia" : "Todos os registros"}</h2><span>${sessions.length}</span></div>
+    <div class="history-list">${sessions.map((s) => `<button class="history-card panel" data-action="session-detail" data-id="${esc(s.id)}"><span class="history-date"><strong>${s.date.slice(-2)}</strong><small>${esc(dateFmt(s.date, { month: "short" }))}</small></span><span class="history-info"><strong>${esc(s.workoutName)}</strong><small>${s.kind === "cardio" ? "Cardio · " + esc(setText(s.entries[0].sets[0], "cardio")) : esc(s.cycleName || "Ficha original") + " · " + s.entries.reduce((n, e) => n + e.sets.length, 0) + " séries" + (s.elapsedMs ? " · " + Math.round(s.elapsedMs / 60000) + " min" : "")}</small></span><span aria-hidden="true">↗</span></button>`).join("") || '<div class="empty panel"><span class="empty-icon">▦</span><h3>Seu caminho começa aqui</h3><p>Nenhum registro neste filtro. Você também pode registrar um treino de outro dia.</p><button class="secondary" data-action="retro">Registrar treino</button></div>'}</div>`;
 }
 function sessionDetail(id) {
   const s = data.sessions.find((s) => s.id === id);
   if (!s) return;
   openModal(
     s.workoutName,
-    `<p class="muted">${esc(dateFmt(s.date, { day: "numeric", month: "long", year: "numeric" }))} · ${esc(s.cycleName || "Ficha original")}</p>${s.entries.map((e) => `<div class="detail-exercise"><h3>${esc(e.exerciseName)}</h3>${e.sets.map((set, i) => `<p><span class="muted">Série ${i + 1}</span> <strong>${esc(setText(set, e.type))}</strong></p>`).join("")}</div>`).join("") || "<p>Dia de descanso registrado.</p>"}${s.notes ? `<p class="note-box">${esc(s.notes)}</p>` : ""}`,
+    `<p class="muted">${esc(dateFmt(s.date, { day: "numeric", month: "long", year: "numeric" }))} · ${esc(s.cycleName || "Ficha original")}</p>${s.entries.map((e) => `<div class="detail-exercise"><h3>${esc(e.exerciseName)}</h3>${e.sets.map((set, i) => `<p><span class="muted">${s.kind === "cardio" ? "Duração" : "Série " + (i + 1)}</span> <strong>${esc(setText(set, e.type))}</strong></p>`).join("")}</div>`).join("") || "<p>Dia de descanso registrado.</p>"}${s.notes ? `<p class="note-box">${esc(s.notes)}</p>` : ""}`,
     `<button class="text-button danger" data-action="delete-session" data-id="${esc(id)}">Excluir</button><button class="primary" data-action="edit-session" data-id="${esc(id)}">Editar registro</button>`,
   );
+}
+function cardioModal(session = null) {
+  const activity = session?.activity || "";
+  const custom = activity && !cardioTypes.includes(activity);
+  const set = session?.entries[0].sets[0];
+  openModal(
+    session ? "Editar cardio" : "Registrar cardio",
+    `<form id="cardio-form" data-id="${esc(session?.id || "")}">
+    <p class="muted small">Registre uma atividade que você já concluiu. Pode adicionar quantas fizer no dia.</p>
+    <label>Tipo de cardio<select id="cardio-type" required><option value="">Escolha a atividade</option>${cardioTypes.map((name) => `<option value="${esc(name)}" ${activity === name ? "selected" : ""}>${esc(name)}</option>`).join("")}<option value="outro" ${custom ? "selected" : ""}>Outro</option></select></label>
+    <label id="cardio-other-label" ${custom ? "" : "hidden"}>Qual atividade?<input id="cardio-other" maxlength="100" value="${esc(custom ? activity : "")}" ${custom ? "required" : "disabled"}></label>
+    <div class="form-grid"><label>Duração (min)<input id="cardio-minutes" type="number" inputmode="decimal" min="0.1" step="any" required placeholder="Ex.: 30" value="${esc(set?.minutes ?? "")}"></label><label>Data<input id="cardio-date" type="date" required max="${C.localDate()}" value="${esc(session?.date || C.localDate())}"></label></div>
+    <details class="cardio-details" ${set?.distance || session?.notes ? "open" : ""}><summary>Distância e observações (opcional)</summary>
+    <label>Distância (km)<input id="cardio-distance" type="number" inputmode="decimal" min="0" step="any" placeholder="Ex.: 2,5" value="${esc(set?.distance ?? "")}"></label>
+    <label>Observações<textarea id="cardio-notes" maxlength="2000" placeholder="Ex.: esteira, inclinação 3%">${esc(session?.notes || "")}</textarea></label></details></form>`,
+    `<button class="secondary" data-action="close-modal">Cancelar</button><button class="primary" type="submit" form="cardio-form">${session ? "Salvar alterações" : "Salvar cardio"}</button>`,
+  );
+}
+function saveCardioForm() {
+  const form = $("cardio-form");
+  if (!form.reportValidity()) return;
+  const activity =
+    $("cardio-type").value === "outro"
+      ? $("cardio-other").value
+      : $("cardio-type").value;
+  if (
+    commit((d) =>
+      C.saveCardio(
+        d,
+        {
+          activity,
+          date: $("cardio-date").value,
+          minutes: $("cardio-minutes").value,
+          distance: $("cardio-distance").value,
+          notes: $("cardio-notes").value,
+        },
+        form.dataset.id || null,
+      ),
+    )
+  ) {
+    $("modal").close();
+    render();
+    toast("Cardio salvo no histórico.");
+  }
 }
 function exerciseCatalog() {
   const map = new Map();
@@ -348,7 +402,7 @@ function renderProgress() {
       )}</select></label><label>Indicador<select id="report-metric">${metrics.map(([v, n]) => `<option value="${v}" ${v === reportMetric ? "selected" : ""}>${n}</option>`).join("")}</select></label></div></div>
     ${
       records.length
-        ? `<div class="summary-grid"><div class="panel stat"><span>${e.type === "forca" ? "Maior carga" : "Último resultado"}</span><strong>${fmt(e.type === "forca" ? C.maxWeight(records) : metricValue(last.entry))}<small> ${e.type === "forca" ? "kg" : unit}</small></strong></div><div class="panel stat"><span>Vs. sessão anterior</span><strong>${delta === null ? "—" : (delta > 0 ? "+" : "") + fmt(delta)}<small> ${delta === null ? "primeiro registro" : unit}</small></strong></div></div><section class="panel chart-panel"><div class="section-title"><h2>${esc(metrics.find(([k]) => k === reportMetric)[1])}</h2><span>${records.length} registros</span></div>${chartHTML(records, unit)}<p class="small muted">Cada ponto é uma sessão. Volume é a soma de carga × repetições; não equivale à carga máxima.</p></section><div class="section-title"><h2>Registros do exercício</h2></div>${records
+        ? `<div class="summary-grid"><div class="panel stat"><span>${e.type === "forca" ? "Maior carga" : "Último resultado"}</span><strong>${fmt(e.type === "forca" ? C.maxWeight(records) : metricValue(last.entry))}<small> ${e.type === "forca" ? "kg" : unit}</small></strong></div><div class="panel stat"><span>Vs. sessão anterior</span><strong>${delta === null ? "—" : (delta > 0 ? "+" : "") + fmt(delta)}<small> ${delta === null ? "primeiro registro" : unit}</small></strong></div></div><section class="panel chart-panel"><div class="section-title"><h2>${esc(metrics.find(([k]) => k === reportMetric)[1])}</h2><span>${records.length} registros</span></div>${chartHTML(records, unit)}<p class="small muted">${e.type === "forca" ? "Cada ponto é uma sessão. Volume é a soma de carga × repetições; não equivale à carga máxima." : "Cada ponto é uma atividade registrada, com a duração ou distância informada."}</p></section><div class="section-title"><h2>Registros do exercício</h2></div>${records
             .slice()
             .reverse()
             .map(
@@ -736,7 +790,12 @@ const actions = {
       });
     }
   },
+  cardio: () => cardioModal(),
   "edit-session": (el) => {
+    const cardio = data.sessions.find(
+      (s) => s.id === el.dataset.id && s.kind === "cardio",
+    );
+    if (cardio) return cardioModal(cardio);
     if (data.activeSession)
       return toast(
         "Finalize ou descarte a sessão em andamento antes de editar outra.",
@@ -1164,8 +1223,20 @@ document.addEventListener("input", (event) => {
       d.activeSession.notes = el.value;
     });
 });
+document.addEventListener("submit", (event) => {
+  if (event.target.id !== "cardio-form") return;
+  event.preventDefault();
+  saveCardioForm();
+});
 document.addEventListener("change", (event) => {
   const el = event.target;
+  if (el.id === "cardio-type") {
+    const custom = el.value === "outro";
+    $("cardio-other-label").hidden = !custom;
+    $("cardio-other").disabled = !custom;
+    $("cardio-other").required = custom;
+    if (custom) $("cardio-other").focus();
+  }
   if (el.id === "workout-choice") {
     pickedWorkout = el.value;
     renderToday();
