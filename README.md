@@ -36,6 +36,8 @@ O service worker prepara os arquivos do app após uma abertura com conexão, inc
 
 O timer usa o horário de término para manter a contagem após suspensão e retorna ao valor correto ao reabrir. Vibração depende do navegador. Não há promessa de alarme com tela bloqueada; para isso, use o relógio.
 
+Os scripts e o CSS usam uma versão na URL para evitar que o worker legado sirva arquivos v1 junto ao HTML v2. A cada versão incompatível, atualize esse identificador tanto no HTML quanto na lista de ativos do worker.
+
 ## Desenvolvimento e validação
 
 Arquivos estáticos: `index.html`, `styles.css`, `app.js` (interface), `core.js` (dados, migração, validação e importação), `default-plan.js` (ficha original).
