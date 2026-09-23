@@ -203,7 +203,7 @@ function setText(set, type) {
   return `${set.weight === "" || set.weight == null ? "—" : fmt(Number(set.weight))} kg × ${set.reps === "" || set.reps == null ? "—" : fmt(Number(set.reps))}`;
 }
 function setInput(entryIndex, setIndex, key, value, label, step = "1") {
-  return `<label><span>${label}</span><input aria-label="${label}, série ${setIndex + 1}, ${esc(data.activeSession.entries[entryIndex].exerciseName)}" data-entry="${entryIndex}" data-set="${setIndex}" data-field="${key}" type="number" inputmode="${step === "1" ? "numeric" : "decimal"}" min="0" step="${step}" value="${esc(value ?? "")}" placeholder="—"></label>`;
+  return `<label><span>${label}</span><input aria-label="${label}, série ${setIndex + 1}, ${esc(data.activeSession.entries[entryIndex].exerciseName)}" data-entry="${entryIndex}" data-set="${setIndex}" data-field="${key}" type="text" inputmode="${step === "1" ? "numeric" : "decimal"}" value="${esc(value ?? "")}" placeholder="—"></label>`;
 }
 function sessionHTML(s) {
   const total = s.entries.reduce((n, e) => n + e.sets.length, 0),
@@ -1283,6 +1283,11 @@ const actions = {
   },
 };
 document.addEventListener("click", async (event) => {
+  const setField = event.target.closest(".set-values input[data-field]");
+  if (setField) {
+    setField.select();
+    return;
+  }
   const t = event.target.closest("[data-tab]");
   if (t) {
     go(t.dataset.tab);
@@ -1299,6 +1304,8 @@ document.addEventListener("click", async (event) => {
 document.addEventListener("input", (event) => {
   const el = event.target;
   if (el.dataset.field && data?.activeSession) {
+    if (el.inputMode === "decimal" && el.value.includes(","))
+      el.value = el.value.replace(",", ".");
     const i = Number(el.dataset.entry),
       j = Number(el.dataset.set);
     if (
