@@ -1,12 +1,12 @@
-const CACHE = "treino-tiago-v2.3.0";
+const CACHE = "treino-tiago-v2.3.1";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=2.3.0",
-  "./app.js?v=2.3.0",
-  "./core.js?v=2.3.0",
-  "./default-plan.js?v=2.3.0",
-  "./vendor/fflate.js?v=2.3.0",
+  "./styles.css?v=2.3.1",
+  "./app.js?v=2.3.1",
+  "./core.js?v=2.3.1",
+  "./default-plan.js?v=2.3.1",
+  "./vendor/fflate.js?v=2.3.1",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-192.png",
